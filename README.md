@@ -40,6 +40,24 @@ Add floating particles behind Monika for atmosphere:
 - Per-category pack selection via Talk → Misc → "Customize visuals"
 - Automatic backup and restore of original files
 
+## 📦 Installation
+
+1. Download the latest release
+2. Extract the `Imaginary` folder
+3. Copy it to: `DDLC/game/Submods/`
+
+**Full path after installation:**
+```
+DDLC/
+└── game/
+    └── Submods/
+        └── Imaginary/
+            ├── main.rpy
+            ├── functions.rpy
+            ├── events.rpy
+            └── ...
+```
+
 ---
 
 # Sprite Pack Structure Guide
@@ -120,8 +138,8 @@ monika/
 
 **Good examples:**
 - `zerofixer_green_ring`
-- `artistname_chess_pastel`
-- `modder123_pong_christmas`
+- `anonymous_chess_pastel`
+- `unknown_pong_christmas`
 
 **Bad examples:**
 - `Green Ring` ❌ (spaces and capitals)
