@@ -45,11 +45,11 @@ label imaginary_skin_select:
         _sections = {
             "monika": {
                 "name": "Monika",
-                "categories": ["face", "arms", "torso"]
+                "categories": ["eyes", "eyebrows", "mouth", "nose", "blush", "arms", "torso"]
             },
             "accessories": {
                 "name": "Accessories",
-                "categories": ["mug", "hotchoc_mug", "promisering", "quetzal", "roses"]
+                "categories": ["mug", "hotchoc_mug", "promisering", "quetzal", "quetzal_mid", "roses"]
             },
             "room": {
                 "name": "Room",
@@ -149,17 +149,16 @@ label imaginary_restore_all:
                 
                 _restored_count = 0
                 _categories = [
+                    "eyes", "eyebrows", "mouth", "nose", "blush",
+                    "arms", "torso",
                     "mug", "hotchoc_mug", "calendar", "promisering", 
-                    "nou", "chess", "pong", "arms", "torso", "quetzal", "roses"
+                    "nou", "chess", "pong", "quetzal", "quetzal_mid", "roses"
                 ]
                 
                 for _cat in _categories:
                     if imaginary_restore_mas_defaults(_cat):
                         _restored_count += 1
                     skins.set_selected_pack(_cat, None)
-                
-                # Reset face too (uses path override, not file copy)
-                skins.set_selected_pack("face", None)
             
             "Restored [_restored_count] categories to defaults."
             "Restart required to apply changes."
@@ -267,7 +266,7 @@ label imaginary_skin_apply:
     $ skins.set_selected_pack(_imaginary_sel_category, _new_pack)
     
     # Restore original files if selecting default (for file-copy categories)
-    if not _new_pack and _imaginary_sel_category in ["mug", "hotchoc_mug", "calendar", "promisering", "nou", "chess", "pong", "arms", "torso", "quetzal", "roses"]:
+    if not _new_pack and _imaginary_sel_category in ["eyes", "eyebrows", "mouth", "nose", "blush", "arms", "torso", "mug", "hotchoc_mug", "calendar", "promisering", "nou", "chess", "pong", "quetzal", "quetzal_mid", "roses"]:
         python:
             _restored = imaginary_restore_mas_defaults(_imaginary_sel_category)
         if _restored:

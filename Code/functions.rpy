@@ -25,6 +25,9 @@ init python:
     imaginary_sprite_manager = None
     imaginary_particle_list = []
     
+    # Pre-calculated angles for floating mode (8 directions, optimized)
+    PRESET_ANGLES = [(math.cos(i * 0.785398), math.sin(i * 0.785398)) for i in range(8)]
+    
     
     def imaginary_get_particle_path(particle_id):
         """
@@ -69,11 +72,16 @@ init python:
     def imaginary_create_single_particle():
         """
         Create a single particle with random properties.
+        Supports both floating (random movement) and falling (top to bottom) modes.
         """
         global imaginary_sprite_manager, imaginary_particle_list
         
         if imaginary_sprite_manager is None:
             return
+        
+        # Get movement mode for current particle type
+        particle_type = persistent._imaginary_particle_type
+        movement_mode = store.imaginary.PARTICLE_MOVEMENT_MODES.get(particle_type, "floating")
         
         # Random properties
         rand_alpha = random.uniform(0.0, 0.5)
@@ -89,33 +97,47 @@ init python:
         particle.img_path = img_path  # Cache path to avoid recalculating each frame
         particle.alpha = rand_alpha
         particle.zoom = rand_zoom
-        particle.speed = random.uniform(0.03, 0.15)
+        particle.movement_mode = movement_mode
         
-        # Random starting position (avoiding edges)
-        particle.x = renpy.random.randint(100, config.screen_width - 100)
-        particle.y = renpy.random.randint(100, config.screen_height - 100)
-        
-        # Random destination for movement
-        particle.move_to = (
-            renpy.random.randint(100, config.screen_width - 100),
-            renpy.random.randint(100, config.screen_height - 100)
-        )
-        
-        # Calculate movement direction (pre-compute to avoid cos/sin each frame)
-        angle = math.atan2(
-            particle.move_to[1] - particle.y,
-            particle.move_to[0] - particle.x
-        )
-        particle.dx = math.cos(angle) * particle.speed
-        particle.dy = math.sin(angle) * particle.speed
-        
-        # Fade in/out control
-        if rand_alpha < 0.25:
-            particle.fadein = True
+        if movement_mode == "falling":
+            # Falling mode: spawn distributed across screen initially
+            particle.speed = random.uniform(0.5, 1.5)  # Faster for falling
+            particle.x = renpy.random.randint(0, config.screen_width)
+            # On first creation, distribute across entire screen height
+            # On respawn, will start above screen (handled in reposition)
+            particle.y = renpy.random.randint(0, config.screen_height)
+            
+            # Wind effect (horizontal drift)
+            particle.wind = random.uniform(-0.3, 0.3)
+            
+            # Falling direction (mostly down with some horizontal)
+            particle.dx = particle.wind
+            particle.dy = particle.speed
+            
+            # For falling, start visible
+            particle.alpha = random.uniform(0.3, 0.6)
+            particle.fadein = False
             particle.fadeout = False
         else:
-            particle.fadein = False
-            particle.fadeout = True
+            # Floating mode: random movement (optimized with preset angles)
+            particle.speed = random.uniform(0.03, 0.15)
+            
+            # Random starting position (avoiding edges)
+            particle.x = renpy.random.randint(100, config.screen_width - 100)
+            particle.y = renpy.random.randint(100, config.screen_height - 100)
+            
+            # Direction using pre-calculated angles (8 directions)
+            angle_idx = renpy.random.randint(0, 7)
+            particle.dx = PRESET_ANGLES[angle_idx][0] * particle.speed
+            particle.dy = PRESET_ANGLES[angle_idx][1] * particle.speed
+            
+            # Fade in/out control
+            if rand_alpha < 0.25:
+                particle.fadein = True
+                particle.fadeout = False
+            else:
+                particle.fadein = False
+                particle.fadeout = True
         
         imaginary_particle_list.append(particle)
     
@@ -124,6 +146,7 @@ init python:
         """
         Update function called every frame.
         Animates particles with movement and fade effects.
+        Handles both floating and falling modes.
         
         IN:
             st - Animation time (provided by Ren'Py)
@@ -138,58 +161,75 @@ init python:
             particle.x += particle.dx
             particle.y += particle.dy
             
-            # Fade in/out control
-            if particle.fadein:
-                particle.alpha += 0.0006
-                if particle.alpha >= 0.5:
-                    particle.fadein = False
-                    particle.fadeout = True
-                    
-            elif particle.fadeout:
-                particle.alpha -= 0.0006
-                if particle.alpha <= 0.0:
-                    # Reposition particle when fully faded
+            # Check movement mode
+            if getattr(particle, 'movement_mode', 'floating') == "falling":
+                # Falling mode: respawn at top when going off screen
+                if particle.y > config.screen_height + 50:
                     imaginary_reposition_particle(particle)
+                # Also respawn if too far left/right
+                elif particle.x < -50 or particle.x > config.screen_width + 50:
+                    imaginary_reposition_particle(particle)
+            else:
+                # Floating mode: fade in/out control
+                if particle.fadein:
+                    particle.alpha += 0.003  # Optimized: was 0.0006
+                    if particle.alpha >= 0.5:
+                        particle.fadein = False
+                        particle.fadeout = True
+                        
+                elif particle.fadeout:
+                    particle.alpha -= 0.003  # Optimized: was 0.0006
+                    if particle.alpha <= 0.0:
+                        # Reposition particle when fully faded
+                        imaginary_reposition_particle(particle)
             
             # Update displayable with new alpha (using cached path)
             t = Transform(particle.img_path, alpha=max(0.0, particle.alpha), zoom=particle.zoom)
             particle.set_child(t)
         
-        return 0  # Redraw immediately
+        return 0.016  # ~60 FPS fixed interval (optimized from 0)
     
     
     def imaginary_reposition_particle(particle):
         """
-        Reposition a particle after it completes its fade out cycle.
+        Reposition a particle after it completes its cycle.
+        Handles both floating (fade out) and falling (off screen) modes.
         
         IN:
             particle - The particle to reposition
         """
-        # New random position
-        particle.x = renpy.random.randint(100, config.screen_width - 100)
-        particle.y = renpy.random.randint(100, config.screen_height - 100)
+        movement_mode = getattr(particle, 'movement_mode', 'floating')
         
-        # New destination
-        particle.move_to = (
-            renpy.random.randint(100, config.screen_width - 100),
-            renpy.random.randint(100, config.screen_height - 100)
-        )
-        
-        # New angle and pre-compute direction
-        angle = math.atan2(
-            particle.move_to[1] - particle.y,
-            particle.move_to[0] - particle.x
-        )
-        
-        # New speed and pre-computed velocity
-        particle.speed = random.uniform(0.03, 0.15)
-        particle.dx = math.cos(angle) * particle.speed
-        particle.dy = math.sin(angle) * particle.speed
-        
-        # Reset fade
-        particle.alpha = 0.0
-        particle.fadein = True
-        particle.fadeout = False
+        if movement_mode == "falling":
+            # Falling mode: respawn at top
+            particle.x = renpy.random.randint(0, config.screen_width)
+            particle.y = renpy.random.randint(-100, -20)  # Above screen
+            
+            # New speed and wind
+            particle.speed = random.uniform(0.5, 1.5)
+            particle.wind = random.uniform(-0.3, 0.3)
+            particle.dx = particle.wind
+            particle.dy = particle.speed
+            
+            # Reset zoom for variation
+            particle.zoom = random.uniform(0.3, 0.7)
+            particle.alpha = random.uniform(0.3, 0.6)
+        else:
+            # Floating mode: original behavior (optimized with preset angles)
+            # New random position
+            particle.x = renpy.random.randint(100, config.screen_width - 100)
+            particle.y = renpy.random.randint(100, config.screen_height - 100)
+            
+            # New speed and direction using pre-calculated angles (8 directions)
+            particle.speed = random.uniform(0.03, 0.15)
+            angle_idx = renpy.random.randint(0, 7)
+            particle.dx = PRESET_ANGLES[angle_idx][0] * particle.speed
+            particle.dy = PRESET_ANGLES[angle_idx][1] * particle.speed
+            
+            # Reset fade
+            particle.alpha = 0.0
+            particle.fadein = True
+            particle.fadeout = False
     
     
     def imaginary_destroy_particles():
@@ -413,26 +453,64 @@ init -990 python in imaginary_skins:
     # Pack category definitions
     # Each category has: path, persistent_key, display_name, mas_path
     CATEGORIES = {
-        # Monika appearance
-        "face": {
-            "path": CUSTOM_PATH + "face/",
-            "persistent_key": "_imaginary_face_pack",
-            "display_name": "Face",
-            "mas_path": "mod_assets/monika/f/"
+        # Monika face parts (all share /f/ folder, use backup_key to group)
+        "eyes": {
+            "path": CUSTOM_PATH + "eyes/",
+            "persistent_key": "_imaginary_eyes_pack",
+            "display_name": "Eyes",
+            "mas_path": "mod_assets/monika/f/",
+            "file_prefix": "face-eyes-",
+            "backup_key": "face"  # Shared backup for all face parts
         },
+        "eyebrows": {
+            "path": CUSTOM_PATH + "eyebrows/",
+            "persistent_key": "_imaginary_eyebrows_pack",
+            "display_name": "Eyebrows",
+            "mas_path": "mod_assets/monika/f/",
+            "file_prefix": "face-eyebrows-",
+            "backup_key": "face"
+        },
+        "mouth": {
+            "path": CUSTOM_PATH + "mouth/",
+            "persistent_key": "_imaginary_mouth_pack",
+            "display_name": "Mouth",
+            "mas_path": "mod_assets/monika/f/",
+            "file_prefix": "face-mouth-",
+            "backup_key": "face"
+        },
+        "nose": {
+            "path": CUSTOM_PATH + "nose/",
+            "persistent_key": "_imaginary_nose_pack",
+            "display_name": "Nose",
+            "mas_path": "mod_assets/monika/f/",
+            "file_prefix": "face-nose-",
+            "backup_key": "face"
+        },
+        "blush": {
+            "path": CUSTOM_PATH + "blush/",
+            "persistent_key": "_imaginary_blush_pack",
+            "display_name": "Blush",
+            "mas_path": "mod_assets/monika/f/",
+            "file_prefix": "face-blush-",
+            "backup_key": "face"
+        },
+        
+        # Monika body parts (share /b/ folder)
         "arms": {
             "path": CUSTOM_PATH + "arms/",
             "persistent_key": "_imaginary_arms_pack",
             "display_name": "Arms & Hands",
             "mas_path": "mod_assets/monika/b/",
-            "file_prefix": "arms-"  # Only copy files starting with arms-
+            "file_prefix": "arms-",
+            "backup_key": "body"  # Shared backup for body parts
         },
         "torso": {
             "path": CUSTOM_PATH + "torso/",
             "persistent_key": "_imaginary_torso_pack",
             "display_name": "Torso & Head",
             "mas_path": "mod_assets/monika/b/",
-            "file_prefix": "body-"  # Only copy files starting with body-
+            "file_prefix": "body-",
+            "backup_key": "body"
         },
         
         # Accessories
@@ -459,6 +537,12 @@ init -990 python in imaginary_skins:
             "persistent_key": "_imaginary_quetzal_pack",
             "display_name": "Quetzal Plushie",
             "mas_path": "mod_assets/monika/a/quetzalplushie/"
+        },
+        "quetzal_mid": {
+            "path": CUSTOM_PATH + "quetzal_mid/",
+            "persistent_key": "_imaginary_quetzal_mid_pack",
+            "display_name": "Quetzal Mid",
+            "mas_path": "mod_assets/monika/a/quetzalplushie_mid/"
         },
         "roses": {
             "path": CUSTOM_PATH + "roses/",
@@ -552,13 +636,18 @@ init -990 python in imaginary_skins:
         files = []
         
         if os.path.exists(pack_path):
-            for root, dirs, filenames in os.walk(pack_path):
-                for f in filenames:
-                    # Skip files that don't match the prefix (if specified)
-                    if file_prefix and not f.startswith(file_prefix):
-                        continue
-                    rel_path = os.path.relpath(os.path.join(root, f), pack_path)
-                    files.append(rel_path.replace("\\", "/"))
+            # For categories with file_prefix, only list root files
+            if file_prefix:
+                for f in os.listdir(pack_path):
+                    full_path = os.path.join(pack_path, f)
+                    if os.path.isfile(full_path) and f.startswith(file_prefix):
+                        files.append(f)
+            else:
+                # For other categories, walk recursively
+                for root, dirs, filenames in os.walk(pack_path):
+                    for f in filenames:
+                        rel_path = os.path.relpath(os.path.join(root, f), pack_path)
+                        files.append(rel_path.replace("\\", "/"))
         
         return files
     
@@ -583,13 +672,18 @@ init -990 python in imaginary_skins:
         files = []
         
         if os.path.exists(default_path):
-            for root, dirs, filenames in os.walk(default_path):
-                for f in filenames:
-                    # Skip files that don't match the prefix (if specified)
-                    if file_prefix and not f.startswith(file_prefix):
-                        continue
-                    rel_path = os.path.relpath(os.path.join(root, f), default_path)
-                    files.append(rel_path.replace("\\", "/"))
+            # For categories with file_prefix, only list root files (avoid subfolders from outfits)
+            if file_prefix:
+                for f in os.listdir(default_path):
+                    full_path = os.path.join(default_path, f)
+                    if os.path.isfile(full_path) and f.startswith(file_prefix):
+                        files.append(f)
+            else:
+                # For other categories, walk recursively
+                for root, dirs, filenames in os.walk(default_path):
+                    for f in filenames:
+                        rel_path = os.path.relpath(os.path.join(root, f), default_path)
+                        files.append(rel_path.replace("\\", "/"))
         
         return files
     
@@ -682,8 +776,10 @@ init 100 python:
         Called on startup.
         """
         categories_to_copy = [
+            "eyes", "eyebrows", "mouth", "nose", "blush",
+            "arms", "torso",
             "mug", "hotchoc_mug", "calendar", "promisering", 
-            "nou", "chess", "pong", "arms", "torso", "quetzal", "roses"
+            "nou", "chess", "pong", "quetzal", "quetzal_mid", "roses"
         ]
         
         for cat in categories_to_copy:
@@ -707,7 +803,11 @@ init 100 python:
         cat_info = skins.CATEGORIES[category]
         pack_path = skins.get_full_path(cat_info["path"] + pack_name + "/")
         mas_path = skins.get_full_path(cat_info["mas_path"])
-        backup_path = skins.get_full_path(cat_info["path"] + "_backup_" + category + "/")
+        
+        # Use backup_key if available (for shared backups like face parts, body parts)
+        # All backups go to _backup_mas/ folder to keep custom/ clean
+        backup_key = cat_info.get("backup_key", category)
+        backup_path = skins.get_full_path(skins.CUSTOM_PATH + "_backup_mas/" + backup_key + "/")
         
         if not os.path.exists(pack_path):
             return
@@ -723,13 +823,25 @@ init 100 python:
             "hotchoc_mug": "hotchoc_mug",
             "promisering": "promisering",
             "quetzal": "quetzalplushie",  # Note: folder name differs from prefix
+            "quetzal_mid": "quetzalplushie_mid",
             "roses": "roses"
         }
         
-        # Create backup of original MAS files (only once)
+        # Create backup of original MAS files (only once per backup_key)
+        # For shared backups (face, body), only copy root files to avoid subfolders from outfits
         if not os.path.exists(backup_path) and os.path.exists(mas_path):
             try:
-                shutil.copytree(mas_path, backup_path)
+                if cat_info.get("backup_key"):
+                    # Shared backup: copy only root files, not subfolders
+                    os.makedirs(backup_path)
+                    for f in os.listdir(mas_path):
+                        src = os.path.join(mas_path, f)
+                        if os.path.isfile(src):
+                            dst = os.path.join(backup_path, f)
+                            shutil.copy2(src, dst)
+                else:
+                    # Regular backup: copy entire folder tree
+                    shutil.copytree(mas_path, backup_path)
             except Exception:
                 pass  # Backup exists or permission issue
         
@@ -844,14 +956,22 @@ init 100 python:
         
         cat_info = skins.CATEGORIES[category]
         mas_path = skins.get_full_path(cat_info["mas_path"])
-        backup_path = skins.get_full_path(cat_info["path"] + "_backup_" + category + "/")
+        
+        # Use backup_key if available (for shared backups)
+        backup_key = cat_info.get("backup_key", category)
+        backup_path = skins.get_full_path(skins.CUSTOM_PATH + "_backup_mas/" + backup_key + "/")
+        file_prefix = cat_info.get("file_prefix", None)
         
         if not os.path.exists(backup_path):
             return False
         
-        # Copy backup back to MAS location
+        # Copy backup back to MAS location (only files matching prefix if specified)
         for root, dirs, files in os.walk(backup_path):
             for f in files:
+                # Skip files that don't match the prefix (if specified)
+                if file_prefix and not f.startswith(file_prefix):
+                    continue
+                    
                 src = os.path.join(root, f)
                 rel_path = os.path.relpath(src, backup_path)
                 dst = os.path.join(mas_path, rel_path)

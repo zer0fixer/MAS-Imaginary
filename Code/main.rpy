@@ -19,7 +19,7 @@ init -990 python:
     store.mas_submod_utils.Submod(
         author="ZeroFixer",
         name="Imaginary",
-        description="Customize Monika's appearance with visual packs (face, arms, torso, accessories, games) and ambient particles.",
+        description="Customize Monika's appearance with visual packs (eyes, mouth, nose, arms, torso, accessories, games) and ambient particles (snow, sakura, leaves, and more).",
         version="1.0.0",
         settings_pane="imaginary_settings_pane"
     )
@@ -46,8 +46,14 @@ init -989 python:
 
 init -999:
     # --- Skin Pack Selections ---
-    # Monika appearance
-    default persistent._imaginary_face_pack = None
+    # Monika face parts
+    default persistent._imaginary_eyes_pack = None
+    default persistent._imaginary_eyebrows_pack = None
+    default persistent._imaginary_mouth_pack = None
+    default persistent._imaginary_nose_pack = None
+    default persistent._imaginary_blush_pack = None
+    
+    # Monika body parts
     default persistent._imaginary_arms_pack = None
     default persistent._imaginary_torso_pack = None
     
@@ -56,6 +62,7 @@ init -999:
     default persistent._imaginary_hotchoc_pack = None
     default persistent._imaginary_promisering_pack = None
     default persistent._imaginary_quetzal_pack = None
+    default persistent._imaginary_quetzal_mid_pack = None
     default persistent._imaginary_roses_pack = None
     
     # Room elements
@@ -199,7 +206,7 @@ screen imaginary_select_menu(title, options):
                 else:
                     background Frame("mod_assets/buttons/generic/idle_bg.png", Borders(5, 5, 5, 5), tile=False)
                 padding (15, 10)
-                xalign 0.5
+                xalign 0.45
                 text title size 28 color store.mas_globals.button_text_idle_color outlines []
             
             null height 10
@@ -295,13 +302,21 @@ init -995 python in imaginary_folders:
     IM_PARTICLES_HEARTS = _join_path(IM_PARTICLES, "hearts")
     IM_PARTICLES_STARS = _join_path(IM_PARTICLES, "stars")
     IM_PARTICLES_SAKURA = _join_path(IM_PARTICLES, "sakura")
+    IM_PARTICLES_SNOW = _join_path(IM_PARTICLES, "snow")
+    IM_PARTICLES_LEAVES = _join_path(IM_PARTICLES, "leaves")
+    IM_PARTICLES_CONFETTI = _join_path(IM_PARTICLES, "confetti")
+    IM_PARTICLES_BUBBLES = _join_path(IM_PARTICLES, "bubbles")
     
     # Mapping of particle types to their asset paths
     PARTICLE_TYPE_PATHS = {
         "dust": IM_PARTICLES_DUST,
         "hearts": IM_PARTICLES_HEARTS,
         "stars": IM_PARTICLES_STARS,
-        "sakura": IM_PARTICLES_SAKURA
+        "sakura": IM_PARTICLES_SAKURA,
+        "snow": IM_PARTICLES_SNOW,
+        "leaves": IM_PARTICLES_LEAVES,
+        "confetti": IM_PARTICLES_CONFETTI,
+        "bubbles": IM_PARTICLES_BUBBLES
     }
 
 # ==============================================================================
@@ -313,14 +328,32 @@ init -990 python in imaginary:
     import store
     
     # List of available particle types
-    PARTICLE_TYPES = ["dust", "hearts", "stars", "sakura"]
+    PARTICLE_TYPES = ["dust", "hearts", "stars", "sakura", "snow", "leaves", "confetti", "bubbles"]
     
     # Display names shown in settings UI
     PARTICLE_TYPE_NAMES = {
         "dust": "Dust",
         "hearts": "Hearts",
         "stars": "Stars",
-        "sakura": "Sakura"
+        "sakura": "Sakura",
+        "snow": "Snow",
+        "leaves": "Leaves",
+        "confetti": "Confetti",
+        "bubbles": "Bubbles"
+    }
+    
+    # Movement modes for each particle type
+    # "floating" = random movement (default)
+    # "falling" = falls from top to bottom
+    PARTICLE_MOVEMENT_MODES = {
+        "dust": "floating",
+        "hearts": "floating",
+        "stars": "floating",
+        "sakura": "falling",  # Sakura petals fall
+        "snow": "falling",
+        "leaves": "falling",
+        "confetti": "falling",
+        "bubbles": "floating"  # Bubbles float around
     }
 
 # ==============================================================================
