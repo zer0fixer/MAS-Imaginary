@@ -22,14 +22,14 @@ init python:
     import math
     
     # Global particle system variables
-    imaginary_sprite_manager = None
-    imaginary_particle_list = []
+    eb_sprite_manager = None
+    eb_particle_list = []
     
     # Pre-calculated angles for floating mode (8 directions, optimized)
     PRESET_ANGLES = [(math.cos(i * 0.785398), math.sin(i * 0.785398)) for i in range(8)]
     
     
-    def imaginary_get_particle_path(particle_id):
+    def eb_get_particle_path(particle_id):
         """
         Build the correct path to a particle image.
         
@@ -39,49 +39,49 @@ init python:
         RETURNS:
             string - Normalized path to the image
         """
-        particle_type = persistent._imaginary_particle_type
-        base_path = store.imaginary_folders.PARTICLE_TYPE_PATHS.get(
+        particle_type = persistent._eb_particle_type
+        base_path = store.eb_folders.PARTICLE_TYPE_PATHS.get(
             particle_type, 
-            store.imaginary_folders.IM_PARTICLES_DUST
+            store.eb_folders.EB_PARTICLES_DUST
         )
         return base_path + "/%s.png" % particle_id
     
     
-    def imaginary_create_particles(amount=None):
+    def eb_create_particles(amount=None):
         """
         Create the particle system with specified amount.
         
         IN:
             amount - Number of particles to create (Default: uses persistent setting)
         """
-        global imaginary_sprite_manager, imaginary_particle_list
+        global eb_sprite_manager, eb_particle_list
         
         if amount is None:
-            amount = persistent._imaginary_particle_count
+            amount = persistent._eb_particle_count
         
         # Destroy existing particles first
-        imaginary_destroy_particles()
+        eb_destroy_particles()
         
-        imaginary_sprite_manager = SpriteManager(update=imaginary_update_particles)
-        imaginary_particle_list = []
+        eb_sprite_manager = SpriteManager(update=eb_update_particles)
+        eb_particle_list = []
         
         for i in range(amount):
-            imaginary_create_single_particle()
+            eb_create_single_particle()
     
     
-    def imaginary_create_single_particle():
+    def eb_create_single_particle():
         """
         Create a single particle with random properties.
         Supports both floating (random movement) and falling (top to bottom) modes.
         """
-        global imaginary_sprite_manager, imaginary_particle_list
+        global eb_sprite_manager, eb_particle_list
         
-        if imaginary_sprite_manager is None:
+        if eb_sprite_manager is None:
             return
         
         # Get movement mode for current particle type
-        particle_type = persistent._imaginary_particle_type
-        movement_mode = store.imaginary.PARTICLE_MOVEMENT_MODES.get(particle_type, "floating")
+        particle_type = persistent._eb_particle_type
+        movement_mode = store.eb.PARTICLE_MOVEMENT_MODES.get(particle_type, "floating")
         
         # Random properties
         rand_alpha = random.uniform(0.0, 0.5)
@@ -89,11 +89,11 @@ init python:
         rand_img = renpy.random.choice((0, 1))
         
         # Create displayable with Transform
-        img_path = imaginary_get_particle_path(rand_img)
+        img_path = eb_get_particle_path(rand_img)
         t = Transform(img_path, alpha=rand_alpha, zoom=rand_zoom)
         
         # Create sprite in SpriteManager
-        particle = imaginary_sprite_manager.create(t)
+        particle = eb_sprite_manager.create(t)
         particle.img_path = img_path  # Cache path to avoid recalculating each frame
         particle.alpha = rand_alpha
         particle.zoom = rand_zoom
@@ -139,10 +139,10 @@ init python:
                 particle.fadein = False
                 particle.fadeout = True
         
-        imaginary_particle_list.append(particle)
+        eb_particle_list.append(particle)
     
     
-    def imaginary_update_particles(st):
+    def eb_update_particles(st):
         """
         Update function called every frame.
         Animates particles with movement and fade effects.
@@ -154,9 +154,9 @@ init python:
         RETURNS:
             float - Time until next update (0 = immediate)
         """
-        global imaginary_particle_list
+        global eb_particle_list
         
-        for particle in imaginary_particle_list:
+        for particle in eb_particle_list:
             # Move particle using pre-computed direction
             particle.x += particle.dx
             particle.y += particle.dy
@@ -165,10 +165,10 @@ init python:
             if getattr(particle, 'movement_mode', 'floating') == "falling":
                 # Falling mode: respawn at top when going off screen
                 if particle.y > config.screen_height + 50:
-                    imaginary_reposition_particle(particle)
+                    eb_reposition_particle(particle)
                 # Also respawn if too far left/right
                 elif particle.x < -50 or particle.x > config.screen_width + 50:
-                    imaginary_reposition_particle(particle)
+                    eb_reposition_particle(particle)
             else:
                 # Floating mode: fade in/out control
                 if particle.fadein:
@@ -181,7 +181,7 @@ init python:
                     particle.alpha -= 0.003  # Optimized: was 0.0006
                     if particle.alpha <= 0.0:
                         # Reposition particle when fully faded
-                        imaginary_reposition_particle(particle)
+                        eb_reposition_particle(particle)
             
             # Update displayable with new alpha (using cached path)
             t = Transform(particle.img_path, alpha=max(0.0, particle.alpha), zoom=particle.zoom)
@@ -190,7 +190,7 @@ init python:
         return 0.016  # ~60 FPS fixed interval (optimized from 0)
     
     
-    def imaginary_reposition_particle(particle):
+    def eb_reposition_particle(particle):
         """
         Reposition a particle after it completes its cycle.
         Handles both floating (fade out) and falling (off screen) modes.
@@ -232,33 +232,33 @@ init python:
             particle.fadeout = False
     
     
-    def imaginary_destroy_particles():
+    def eb_destroy_particles():
         """
         Destroy the particle system and free memory.
         """
-        global imaginary_sprite_manager, imaginary_particle_list
+        global eb_sprite_manager, eb_particle_list
         
-        if imaginary_sprite_manager is not None:
-            del imaginary_sprite_manager
-            imaginary_sprite_manager = None
+        if eb_sprite_manager is not None:
+            del eb_sprite_manager
+            eb_sprite_manager = None
         
-        imaginary_particle_list = []
+        eb_particle_list = []
     
     
-    def imaginary_reload_particles():
+    def eb_reload_particles():
         """
         Reload particles with current settings.
         Called when user changes type or amount.
         """
         # Hide current particles first
-        imaginary_hide_particles()
+        eb_hide_particles()
         
         # Create new particle system
-        imaginary_create_particles()
+        eb_create_particles()
         
         # Show the new particles
-        if persistent._imaginary_particles_enabled:
-            imaginary_show_particles()
+        if persistent._eb_particles_enabled:
+            eb_show_particles()
 
 
 # ==============================================================================
@@ -268,60 +268,60 @@ init python:
 
 init python:
     
-    def imaginary_next_type():
+    def eb_next_type():
         """Change to the next particle type."""
-        types = store.imaginary.PARTICLE_TYPES
-        current_idx = types.index(persistent._imaginary_particle_type)
+        types = store.eb.PARTICLE_TYPES
+        current_idx = types.index(persistent._eb_particle_type)
         next_idx = (current_idx + 1) % len(types)
-        persistent._imaginary_particle_type = types[next_idx]
-        imaginary_reload_particles()
+        persistent._eb_particle_type = types[next_idx]
+        eb_reload_particles()
     
-    def imaginary_prev_type():
+    def eb_prev_type():
         """Change to the previous particle type."""
-        types = store.imaginary.PARTICLE_TYPES
-        current_idx = types.index(persistent._imaginary_particle_type)
+        types = store.eb.PARTICLE_TYPES
+        current_idx = types.index(persistent._eb_particle_type)
         prev_idx = (current_idx - 1) % len(types)
-        persistent._imaginary_particle_type = types[prev_idx]
-        imaginary_reload_particles()
+        persistent._eb_particle_type = types[prev_idx]
+        eb_reload_particles()
     
-    def imaginary_increase_count():
+    def eb_increase_count():
         """Increase particle count by 5."""
-        if persistent._imaginary_particle_count < 30:
-            persistent._imaginary_particle_count += 5
-            imaginary_reload_particles()
+        if persistent._eb_particle_count < 30:
+            persistent._eb_particle_count += 5
+            eb_reload_particles()
     
-    def imaginary_decrease_count():
+    def eb_decrease_count():
         """Decrease particle count by 5."""
-        if persistent._imaginary_particle_count > 5:
-            persistent._imaginary_particle_count -= 5
-            imaginary_reload_particles()
+        if persistent._eb_particle_count > 5:
+            persistent._eb_particle_count -= 5
+            eb_reload_particles()
     
-    def imaginary_next_layer():
+    def eb_next_layer():
         """Move to next layer (back → middle → front)."""
         layer_order = ["back", "middle", "front"]
-        current = persistent._imaginary_particle_layer
+        current = persistent._eb_particle_layer
         try:
             current_idx = layer_order.index(current)
             next_idx = (current_idx + 1) % len(layer_order)
         except ValueError:
             next_idx = 1  # Default to middle
         
-        persistent._imaginary_particle_layer = layer_order[next_idx]
-        imaginary_refresh_particle_layer()
+        persistent._eb_particle_layer = layer_order[next_idx]
+        eb_refresh_particle_layer()
         renpy.restart_interaction()
     
-    def imaginary_prev_layer():
+    def eb_prev_layer():
         """Move to previous layer (front → middle → back)."""
         layer_order = ["back", "middle", "front"]
-        current = persistent._imaginary_particle_layer
+        current = persistent._eb_particle_layer
         try:
             current_idx = layer_order.index(current)
             prev_idx = (current_idx - 1) % len(layer_order)
         except ValueError:
             prev_idx = 1  # Default to middle
         
-        persistent._imaginary_particle_layer = layer_order[prev_idx]
-        imaginary_refresh_particle_layer()
+        persistent._eb_particle_layer = layer_order[prev_idx]
+        eb_refresh_particle_layer()
         renpy.restart_interaction()
 
 
@@ -332,21 +332,21 @@ init python:
 
 init python:
     
-    def imaginary_show_particles(with_transition=False):
+    def eb_show_particles(with_transition=False):
         """
         Show particles on the correct layer based on settings.
         
         IN:
             with_transition - If True, use dissolve fade-in effect
         """
-        if not imaginary_sprite_manager:
+        if not eb_sprite_manager:
             return
         
         # Determine zorder based on layer setting
-        if persistent._imaginary_particle_layer == "back":
+        if persistent._eb_particle_layer == "back":
             zorder = 1
             behind = None
-        elif persistent._imaginary_particle_layer == "middle":
+        elif persistent._eb_particle_layer == "middle":
             zorder = 7
             behind = ["monika"]
         else:  # front
@@ -356,16 +356,16 @@ init python:
         # Show on master layer
         if behind:
             renpy.show(
-                "imaginary_particles_obj", 
-                what=imaginary_sprite_manager, 
+                "eb_particles_obj", 
+                what=eb_sprite_manager, 
                 layer="master",
                 zorder=zorder,
                 behind=behind
             )
         else:
             renpy.show(
-                "imaginary_particles_obj", 
-                what=imaginary_sprite_manager, 
+                "eb_particles_obj", 
+                what=eb_sprite_manager, 
                 layer="master",
                 zorder=zorder
             )
@@ -374,26 +374,26 @@ init python:
         if with_transition:
             renpy.with_statement(Dissolve(1.0))
     
-    def imaginary_hide_particles():
+    def eb_hide_particles():
         """Hide particles from all possible layers."""
         # Hide screen version (Back/Front)
         for layer in ["master", "front", "transient", "screens", "overlay"]:
             try:
-                renpy.hide_screen("imaginary_particles_screen", layer=layer)
+                renpy.hide_screen("eb_particles_screen", layer=layer)
             except:
                 pass
         
         # Hide object version (Middle)
         try:
-            renpy.hide("imaginary_particles_obj", layer="master")
+            renpy.hide("eb_particles_obj", layer="master")
         except:
             pass
 
-    def imaginary_refresh_particle_layer():
+    def eb_refresh_particle_layer():
         """Refresh particles on correct layer after layer change."""
-        imaginary_hide_particles()
-        if persistent._imaginary_particles_enabled:
-            imaginary_show_particles()
+        eb_hide_particles()
+        if persistent._eb_particles_enabled:
+            eb_show_particles()
 
 
 # ==============================================================================
@@ -404,37 +404,37 @@ init python:
 init python:
     import store.mas_submod_utils as msu
     
-    def _imaginary_disable_for_game():
+    def _eb_disable_for_game():
         """Temporarily disable particles for games."""
-        persistent._imaginary_temp_disabled = True
+        persistent._eb_temp_disabled = True
     
-    def _imaginary_enable_after_game():
+    def _eb_enable_after_game():
         """Re-enable particles after games."""
-        persistent._imaginary_temp_disabled = False
+        persistent._eb_temp_disabled = False
     
     @msu.functionplugin("game_chess")
-    def _imaginary_hook_chess():
-        _imaginary_disable_for_game()
+    def _eb_hook_chess():
+        _eb_disable_for_game()
     
     @msu.functionplugin("game_pong")
-    def _imaginary_hook_pong():
-        _imaginary_disable_for_game()
+    def _eb_hook_pong():
+        _eb_disable_for_game()
     
     @msu.functionplugin("mas_piano_start")
-    def _imaginary_hook_piano():
-        _imaginary_disable_for_game()
+    def _eb_hook_piano():
+        _eb_disable_for_game()
     
     @msu.functionplugin("mas_hangman")
-    def _imaginary_hook_hangman():
-        _imaginary_disable_for_game()
+    def _eb_hook_hangman():
+        _eb_disable_for_game()
     
     @msu.functionplugin("mas_nou")
-    def _imaginary_hook_nou():
-        _imaginary_disable_for_game()
+    def _eb_hook_nou():
+        _eb_disable_for_game()
     
     @msu.functionplugin("ch30_loop")
-    def _imaginary_hook_loop():
-        _imaginary_enable_after_game()
+    def _eb_hook_loop():
+        _eb_enable_after_game()
 
 
 # ==============================================================================
@@ -442,7 +442,7 @@ init python:
 # Category definitions and pack detection
 # ==============================================================================
 
-init -990 python in imaginary_skins:
+init -990 python in eb_skins:
     import os
     import shutil
     import store
@@ -456,49 +456,49 @@ init -990 python in imaginary_skins:
         # Monika face parts (all share /f/ folder, use backup_key to group)
         "eyes": {
             "path": CUSTOM_PATH + "eyes/",
-            "persistent_key": "_imaginary_eyes_pack",
+            "persistent_key": "_eb_eyes_pack",
             "display_name": "Eyes",
             "mas_path": "mod_assets/monika/f/",
-            "file_prefix": "face-eyes-",
+            "file_prefixes": ["face-eyes-", "face-leaning-def-eyes-"],
             "backup_key": "face"  # Shared backup for all face parts
         },
         "eyebrows": {
             "path": CUSTOM_PATH + "eyebrows/",
-            "persistent_key": "_imaginary_eyebrows_pack",
+            "persistent_key": "_eb_eyebrows_pack",
             "display_name": "Eyebrows",
             "mas_path": "mod_assets/monika/f/",
-            "file_prefix": "face-eyebrows-",
+            "file_prefixes": ["face-eyebrows-", "face-leaning-def-eyebrows-"],
             "backup_key": "face"
         },
         "mouth": {
             "path": CUSTOM_PATH + "mouth/",
-            "persistent_key": "_imaginary_mouth_pack",
+            "persistent_key": "_eb_mouth_pack",
             "display_name": "Mouth",
             "mas_path": "mod_assets/monika/f/",
-            "file_prefix": "face-mouth-",
+            "file_prefixes": ["face-mouth-", "face-leaning-def-mouth-"],
             "backup_key": "face"
         },
         "nose": {
             "path": CUSTOM_PATH + "nose/",
-            "persistent_key": "_imaginary_nose_pack",
+            "persistent_key": "_eb_nose_pack",
             "display_name": "Nose",
             "mas_path": "mod_assets/monika/f/",
-            "file_prefix": "face-nose-",
+            "file_prefixes": ["face-nose-", "face-leaning-def-nose-"],
             "backup_key": "face"
         },
         "blush": {
             "path": CUSTOM_PATH + "blush/",
-            "persistent_key": "_imaginary_blush_pack",
+            "persistent_key": "_eb_blush_pack",
             "display_name": "Blush",
             "mas_path": "mod_assets/monika/f/",
-            "file_prefix": "face-blush-",
+            "file_prefixes": ["face-blush-", "face-leaning-def-blush-"],
             "backup_key": "face"
         },
         
         # Monika body parts (share /b/ folder)
         "arms": {
             "path": CUSTOM_PATH + "arms/",
-            "persistent_key": "_imaginary_arms_pack",
+            "persistent_key": "_eb_arms_pack",
             "display_name": "Arms & Hands",
             "mas_path": "mod_assets/monika/b/",
             "file_prefix": "arms-",
@@ -506,7 +506,7 @@ init -990 python in imaginary_skins:
         },
         "torso": {
             "path": CUSTOM_PATH + "torso/",
-            "persistent_key": "_imaginary_torso_pack",
+            "persistent_key": "_eb_torso_pack",
             "display_name": "Torso & Head",
             "mas_path": "mod_assets/monika/b/",
             "file_prefix": "body-",
@@ -516,37 +516,37 @@ init -990 python in imaginary_skins:
         # Accessories
         "mug": {
             "path": CUSTOM_PATH + "mug/",
-            "persistent_key": "_imaginary_mug_pack",
+            "persistent_key": "_eb_mug_pack",
             "display_name": "Coffee Mug",
             "mas_path": "mod_assets/monika/a/mug/"
         },
         "hotchoc_mug": {
             "path": CUSTOM_PATH + "hotchoc_mug/",
-            "persistent_key": "_imaginary_hotchoc_pack",
+            "persistent_key": "_eb_hotchoc_pack",
             "display_name": "Hot Chocolate Mug",
             "mas_path": "mod_assets/monika/a/hotchoc_mug/"
         },
         "promisering": {
             "path": CUSTOM_PATH + "promisering/",
-            "persistent_key": "_imaginary_promisering_pack",
+            "persistent_key": "_eb_promisering_pack",
             "display_name": "Promise Ring",
             "mas_path": "mod_assets/monika/a/promisering/"
         },
         "quetzal": {
             "path": CUSTOM_PATH + "quetzal/",
-            "persistent_key": "_imaginary_quetzal_pack",
+            "persistent_key": "_eb_quetzal_pack",
             "display_name": "Quetzal Plushie",
             "mas_path": "mod_assets/monika/a/quetzalplushie/"
         },
         "quetzal_mid": {
             "path": CUSTOM_PATH + "quetzal_mid/",
-            "persistent_key": "_imaginary_quetzal_mid_pack",
+            "persistent_key": "_eb_quetzal_mid_pack",
             "display_name": "Quetzal Mid",
             "mas_path": "mod_assets/monika/a/quetzalplushie_mid/"
         },
         "roses": {
             "path": CUSTOM_PATH + "roses/",
-            "persistent_key": "_imaginary_roses_pack",
+            "persistent_key": "_eb_roses_pack",
             "display_name": "Roses",
             "mas_path": "mod_assets/monika/a/roses/"
         },
@@ -554,7 +554,7 @@ init -990 python in imaginary_skins:
         # Room elements
         "calendar": {
             "path": CUSTOM_PATH + "calendar/",
-            "persistent_key": "_imaginary_calendar_pack",
+            "persistent_key": "_eb_calendar_pack",
             "display_name": "Calendar",
             "mas_path": "mod_assets/calendar/"
         },
@@ -562,23 +562,43 @@ init -990 python in imaginary_skins:
         # Games
         "nou": {
             "path": CUSTOM_PATH + "nou/",
-            "persistent_key": "_imaginary_nou_pack",
+            "persistent_key": "_eb_nou_pack",
             "display_name": "NOU Cards",
             "mas_path": "mod_assets/games/nou/"
         },
         "chess": {
             "path": CUSTOM_PATH + "chess/",
-            "persistent_key": "_imaginary_chess_pack",
+            "persistent_key": "_eb_chess_pack",
             "display_name": "Chess",
             "mas_path": "mod_assets/games/chess/"
         },
         "pong": {
             "path": CUSTOM_PATH + "pong/",
-            "persistent_key": "_imaginary_pong_pack",
+            "persistent_key": "_eb_pong_pack",
             "display_name": "Pong",
             "mas_path": "mod_assets/games/pong/"
         }
     }
+    
+    
+    def get_file_prefixes(cat_info):
+        """
+        Get list of file prefixes for a category.
+        Supports both 'file_prefix' (string) and 'file_prefixes' (list).
+        """
+        if "file_prefixes" in cat_info:
+            return cat_info["file_prefixes"]
+        elif "file_prefix" in cat_info:
+            return [cat_info["file_prefix"]]
+        return []
+    
+    
+    def matches_prefix(filename, prefixes):
+        """Check if filename starts with any of the prefixes."""
+        for prefix in prefixes:
+            if filename.startswith(prefix):
+                return True
+        return False
     
     
     def get_full_path(relative_path):
@@ -632,15 +652,15 @@ init -990 python in imaginary_skins:
         
         cat_info = CATEGORIES[category]
         pack_path = get_full_path(cat_info["path"] + pack_name + "/")
-        file_prefix = cat_info.get("file_prefix", None)
+        prefixes = get_file_prefixes(cat_info)
         files = []
         
         if os.path.exists(pack_path):
-            # For categories with file_prefix, only list root files
-            if file_prefix:
+            # For categories with file prefixes, only list root files matching prefixes
+            if prefixes:
                 for f in os.listdir(pack_path):
                     full_path = os.path.join(pack_path, f)
-                    if os.path.isfile(full_path) and f.startswith(file_prefix):
+                    if os.path.isfile(full_path) and matches_prefix(f, prefixes):
                         files.append(f)
             else:
                 # For other categories, walk recursively
@@ -655,7 +675,7 @@ init -990 python in imaginary_skins:
     def get_default_files(category):
         """
         Get list of files in the default MAS path for a category.
-        Respects file_prefix filter for categories like arms/torso.
+        Respects file prefixes for categories like face parts, arms/torso.
         
         IN:
             category - Category key
@@ -668,15 +688,15 @@ init -990 python in imaginary_skins:
         
         cat_info = CATEGORIES[category]
         default_path = get_full_path(cat_info["mas_path"])
-        file_prefix = cat_info.get("file_prefix", None)
+        prefixes = get_file_prefixes(cat_info)
         files = []
         
         if os.path.exists(default_path):
-            # For categories with file_prefix, only list root files (avoid subfolders from outfits)
-            if file_prefix:
+            # For categories with file prefixes, only list root files matching prefixes
+            if prefixes:
                 for f in os.listdir(default_path):
                     full_path = os.path.join(default_path, f)
-                    if os.path.isfile(full_path) and f.startswith(file_prefix):
+                    if os.path.isfile(full_path) and matches_prefix(f, prefixes):
                         files.append(f)
             else:
                 # For other categories, walk recursively
@@ -768,12 +788,12 @@ init -990 python in imaginary_skins:
 init 100 python:
     import os
     import shutil
-    import store.imaginary_skins as skins
+    import store.eb_skins as skins
     
-    def imaginary_apply_file_packs():
+    def eb_apply_file_packs():
         """
         Apply all selected packs by copying files to MAS locations.
-        Called on startup.
+        Called on startup. Only copies if pack was modified since last apply.
         """
         categories_to_copy = [
             "eyes", "eyebrows", "mouth", "nose", "blush",
@@ -782,13 +802,34 @@ init 100 python:
             "nou", "chess", "pong", "quetzal", "quetzal_mid", "roses"
         ]
         
+        # Initialize applied packs cache if not exists
+        if not hasattr(store, '_eb_applied_packs_cache'):
+            store._eb_applied_packs_cache = {}
+        
         for cat in categories_to_copy:
             pack = skins.get_selected_pack(cat)
             if pack:
-                _imaginary_copy_pack_to_mas(cat, pack)
+                # Check if already applied with same pack (skip if no changes)
+                cache_key = cat + ":" + pack
+                pack_path = skins.get_full_path(skins.CATEGORIES[cat]["path"] + pack + "/")
+                
+                # Get pack modification time
+                try:
+                    pack_mtime = os.path.getmtime(pack_path)
+                except:
+                    pack_mtime = 0
+                
+                # Skip if already applied and pack not modified
+                if cache_key in store._eb_applied_packs_cache:
+                    if store._eb_applied_packs_cache[cache_key] >= pack_mtime:
+                        continue  # Already applied, skip
+                
+                # Apply pack and cache timestamp
+                _eb_copy_pack_to_mas(cat, pack)
+                store._eb_applied_packs_cache[cache_key] = pack_mtime
     
     
-    def _imaginary_copy_pack_to_mas(category, pack_name):
+    def _eb_copy_pack_to_mas(category, pack_name):
         """
         Copy pack files to MAS location, creating backup of originals.
         Handles automatic file renaming for older MAS versions.
@@ -814,7 +855,7 @@ init 100 python:
         
         # Detect MAS version for file naming compatibility
         mas_version = renpy.config.version
-        needs_old_format = _imaginary_version_compare(mas_version, "0.12.16") < 0
+        needs_old_format = _eb_version_compare(mas_version, "0.12.16") < 0
         
         # Categories that need old format conversion (accessories)
         # Maps category key to the old format prefix name
@@ -858,7 +899,7 @@ init 100 python:
                     
                     src = os.path.join(root, f)
                     # Convert filename to old format
-                    new_filename = _imaginary_convert_to_old_format(f, old_acs_name)
+                    new_filename = _eb_convert_to_old_format(f, old_acs_name)
                     dst = os.path.join(old_mas_path, new_filename)
                     
                     try:
@@ -867,16 +908,16 @@ init 100 python:
                         pass
         else:
             # New format: copy to subfolder as-is
-            # Check if category has file_prefix filter (for arms/torso)
-            file_prefix = cat_info.get("file_prefix", None)
+            # Check if category has file prefixes filter (for face parts, arms/torso)
+            prefixes = skins.get_file_prefixes(cat_info)
             
             for root, dirs, files in os.walk(pack_path):
                 for f in files:
                     if f == "preview.png":
                         continue
                     
-                    # Skip files that don't match the prefix (if specified)
-                    if file_prefix and not f.startswith(file_prefix):
+                    # Skip files that don't match the prefixes (if specified)
+                    if prefixes and not skins.matches_prefix(f, prefixes):
                         continue
                     
                     src = os.path.join(root, f)
@@ -897,7 +938,7 @@ init 100 python:
                         pass
     
     
-    def _imaginary_version_compare(v1, v2):
+    def _eb_version_compare(v1, v2):
         """
         Compare two version strings.
         
@@ -920,7 +961,7 @@ init 100 python:
             return 0
     
     
-    def _imaginary_convert_to_old_format(filename, acs_name):
+    def _eb_convert_to_old_format(filename, acs_name):
         """
         Convert new filename format to old format for MAS < 0.12.16.
         
@@ -941,7 +982,7 @@ init 100 python:
         return "acs-{}-{}".format(acs_name, filename)
     
     
-    def imaginary_restore_mas_defaults(category):
+    def eb_restore_mas_defaults(category):
         """
         Restore original MAS files from backup.
         
@@ -960,16 +1001,16 @@ init 100 python:
         # Use backup_key if available (for shared backups)
         backup_key = cat_info.get("backup_key", category)
         backup_path = skins.get_full_path(skins.CUSTOM_PATH + "_backup_mas/" + backup_key + "/")
-        file_prefix = cat_info.get("file_prefix", None)
+        prefixes = skins.get_file_prefixes(cat_info)
         
         if not os.path.exists(backup_path):
             return False
         
-        # Copy backup back to MAS location (only files matching prefix if specified)
+        # Copy backup back to MAS location (only files matching prefixes if specified)
         for root, dirs, files in os.walk(backup_path):
             for f in files:
-                # Skip files that don't match the prefix (if specified)
-                if file_prefix and not f.startswith(file_prefix):
+                # Skip files that don't match the prefixes (if specified)
+                if prefixes and not skins.matches_prefix(f, prefixes):
                     continue
                     
                 src = os.path.join(root, f)
@@ -984,7 +1025,7 @@ init 100 python:
         return True
     
     # Apply packs on startup
-    imaginary_apply_file_packs()
+    eb_apply_file_packs()
 
 
 # ==============================================================================
@@ -994,7 +1035,7 @@ init 100 python:
 
 init python:
     
-    def imaginary_select_pack(category, pack_name):
+    def eb_select_pack(category, pack_name):
         """
         Select a pack with validation.
         
@@ -1005,7 +1046,7 @@ init python:
         RETURNS:
             tuple - (success, message)
         """
-        import store.imaginary_skins as skins
+        import store.eb_skins as skins
         
         if pack_name is None:
             skins.set_selected_pack(category, None)
@@ -1019,15 +1060,15 @@ init python:
         # Check for missing files
         missing = skins.get_missing_files(category, pack_name)
         if missing:
-            store._imaginary_pending_pack = (category, pack_name)
-            store._imaginary_missing_count = len(missing)
+            store._eb_pending_pack = (category, pack_name)
+            store._eb_missing_count = len(missing)
             return (False, "MISSING_FILES")
         
         skins.set_selected_pack(category, pack_name)
         return (True, "Pack '{}' selected. Restart to apply.".format(pack_name))
     
     
-    def imaginary_complete_pack(category, pack_name):
+    def eb_complete_pack(category, pack_name):
         """
         Complete a pack by copying missing files from default.
         
@@ -1038,21 +1079,21 @@ init python:
         RETURNS:
             int - Number of files copied
         """
-        import store.imaginary_skins as skins
+        import store.eb_skins as skins
         return skins.copy_missing_files(category, pack_name)
     
     
-    def imaginary_get_pack_list(category):
+    def eb_get_pack_list(category):
         """Get list of available packs including 'default'."""
-        import store.imaginary_skins as skins
+        import store.eb_skins as skins
         return ["default"] + skins.detect_packs(category)
     
     
-    def imaginary_next_pack(category):
+    def eb_next_pack(category):
         """Navigate to next pack for a category."""
-        import store.imaginary_skins as skins
+        import store.eb_skins as skins
         
-        packs = imaginary_get_pack_list(category)
+        packs = eb_get_pack_list(category)
         current = skins.get_selected_pack(category)
         
         if current is None:
@@ -1067,11 +1108,11 @@ init python:
         skins.set_selected_pack(category, new_pack)
     
     
-    def imaginary_prev_pack(category):
+    def eb_prev_pack(category):
         """Navigate to previous pack for a category."""
-        import store.imaginary_skins as skins
+        import store.eb_skins as skins
         
-        packs = imaginary_get_pack_list(category)
+        packs = eb_get_pack_list(category)
         current = skins.get_selected_pack(category)
         
         if current is None:
@@ -1086,9 +1127,9 @@ init python:
         skins.set_selected_pack(category, new_pack)
     
     
-    def imaginary_apply_skins():
+    def eb_apply_skins():
         """Validate packs and request restart."""
-        import store.imaginary_skins as skins
+        import store.eb_skins as skins
         
         categories_to_check = ["face", "mug", "hotchoc_mug", "calendar"]
         incomplete_packs = []
@@ -1101,7 +1142,7 @@ init python:
                     incomplete_packs.append((cat, pack, len(missing)))
         
         if incomplete_packs:
-            store._imaginary_incomplete_packs = incomplete_packs
-            renpy.call_in_new_context("imaginary_incomplete_packs_dialog")
+            store._eb_incomplete_packs = incomplete_packs
+            renpy.call_in_new_context("eb_incomplete_packs_dialog")
         else:
-            renpy.call_in_new_context("imaginary_restart_dialog")
+            renpy.call_in_new_context("eb_restart_dialog")

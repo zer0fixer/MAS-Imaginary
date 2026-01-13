@@ -19,9 +19,9 @@ init 5 python:
     addEvent(
         Event(
             persistent.event_database,
-            eventlabel="imaginary_skin_select",
+            eventlabel="eb_skin_select",
             category=["misc"],
-            prompt="Customize visuals (Imaginary)",
+            prompt="Customize visuals (Box)",
             pool=True,
             unlocked=True
         ),
@@ -35,11 +35,11 @@ init 5 python:
 # Main menu showing sections (Monika, Accessories, Room, Games)
 # ==============================================================================
 
-label imaginary_skin_select:
+label eb_skin_select:
     show monika at t11
     
     python:
-        import store.imaginary_skins as skins
+        import store.eb_skins as skins
         
         # Define sections and their categories
         _sections = {
@@ -82,19 +82,19 @@ label imaginary_skin_select:
         _menu_items.append(("Restore All Defaults", "restore"))
         _menu_items.append(("Nevermind", "cancel"))
     
-    call screen imaginary_select_menu("Customize Visual Packs", _menu_items)
+    call screen eb_select_menu("Welcome!", _menu_items)
     
     if _return == "cancel" or _return is None:
         return
     
     elif _return == "restore":
-        jump imaginary_restore_all
+        jump eb_restore_all
     
     else:
         # Selected a section, show categories in that section
-        $ _imaginary_sel_section = _return
-        $ _imaginary_section_data = _sections[_imaginary_sel_section]
-        jump imaginary_section_categories
+        $ _eb_sel_section = _return
+        $ _eb_section_data = _sections[_eb_sel_section]
+        jump eb_section_categories
 
 
 # ==============================================================================
@@ -102,12 +102,12 @@ label imaginary_skin_select:
 # Shows categories for the selected section
 # ==============================================================================
 
-label imaginary_section_categories:
+label eb_section_categories:
     python:
-        import store.imaginary_skins as skins
+        import store.eb_skins as skins
         
-        _title = _imaginary_section_data["name"]
-        _categories = _imaginary_section_data["categories"]
+        _title = _eb_section_data["name"]
+        _categories = _eb_section_data["categories"]
         
         # Build menu items for this section
         _menu_items = []
@@ -123,14 +123,14 @@ label imaginary_section_categories:
         
         _menu_items.append(("<<< Go Back", "GO_BACK"))
     
-    call screen imaginary_select_menu(_title, _menu_items)
+    call screen eb_select_menu(_title, _menu_items)
     
     if _return == "GO_BACK" or _return is None:
-        jump imaginary_skin_select
+        jump eb_skin_select
     
     else:
-        $ _imaginary_sel_category = _return
-        jump imaginary_skin_select_category
+        $ _eb_sel_category = _return
+        jump eb_skin_select_category
 
 
 # ==============================================================================
@@ -138,14 +138,14 @@ label imaginary_section_categories:
 # Resets all packs to MAS originals (recommended before uninstall)
 # ==============================================================================
 
-label imaginary_restore_all:
+label eb_restore_all:
     "Restore all visual elements to MAS defaults?"
     "This is recommended before uninstalling."
     
     menu:
         "Yes, restore everything":
             python:
-                import store.imaginary_skins as skins
+                import store.eb_skins as skins
                 
                 _restored_count = 0
                 _categories = [
@@ -156,7 +156,7 @@ label imaginary_restore_all:
                 ]
                 
                 for _cat in _categories:
-                    if imaginary_restore_mas_defaults(_cat):
+                    if eb_restore_mas_defaults(_cat):
                         _restored_count += 1
                     skins.set_selected_pack(_cat, None)
             
@@ -173,7 +173,7 @@ label imaginary_restore_all:
         "Cancel":
             pass
     
-    jump imaginary_skin_select
+    jump eb_skin_select
 
 
 # ==============================================================================
@@ -181,16 +181,16 @@ label imaginary_restore_all:
 # Shows available packs for the selected category
 # ==============================================================================
 
-label imaginary_skin_select_category:
+label eb_skin_select_category:
     python:
-        import store.imaginary_skins as skins
+        import store.eb_skins as skins
         
-        _packs = ["default"] + skins.detect_packs(_imaginary_sel_category)
-        _current = skins.get_selected_pack(_imaginary_sel_category)
+        _packs = ["default"] + skins.detect_packs(_eb_sel_category)
+        _current = skins.get_selected_pack(_eb_sel_category)
         
         # Get display name for title
-        _cat_info = skins.CATEGORIES.get(_imaginary_sel_category, {})
-        _cat_display = _cat_info.get("display_name", _imaginary_sel_category.title())
+        _cat_info = skins.CATEGORIES.get(_eb_sel_category, {})
+        _cat_display = _cat_info.get("display_name", _eb_sel_category.title())
         _title = "Select {} Pack".format(_cat_display)
         
         # Build menu items
@@ -210,17 +210,17 @@ label imaginary_skin_select_category:
         
         _menu_items.append(("<<< Go Back", "GO_BACK", False))
     
-    call screen imaginary_select_menu(_title, _menu_items)
+    call screen eb_select_menu(_title, _menu_items)
     
     $ _selected = _return
     
     if _selected == "GO_BACK":
-        jump imaginary_section_categories
+        jump eb_section_categories
     
     if _selected:
-        jump imaginary_skin_apply
+        jump eb_skin_apply
     else:
-        jump imaginary_section_categories
+        jump eb_section_categories
 
 
 # ==============================================================================
@@ -228,9 +228,9 @@ label imaginary_skin_select_category:
 # Validates and applies the selected pack
 # ==============================================================================
 
-label imaginary_skin_apply:
+label eb_skin_apply:
     python:
-        import store.imaginary_skins as skins
+        import store.eb_skins as skins
         
         # "default" in menu = None in persistent
         if _selected == "default":
@@ -238,17 +238,17 @@ label imaginary_skin_apply:
         else:
             _new_pack = _selected
         
-        _old_pack = skins.get_selected_pack(_imaginary_sel_category)
+        _old_pack = skins.get_selected_pack(_eb_sel_category)
         _changed = (_new_pack != _old_pack)
     
     if not _changed:
         "No changes made."
-        jump imaginary_skin_select
+        jump eb_skin_select
     
     # Check if pack has all required files
     if _new_pack:
         python:
-            _missing = skins.get_missing_files(_imaginary_sel_category, _new_pack)
+            _missing = skins.get_missing_files(_eb_sel_category, _new_pack)
             _missing_count = len(_missing)
         
         if _missing_count > 0:
@@ -256,19 +256,19 @@ label imaginary_skin_apply:
             menu:
                 "Complete it with default files":
                     python:
-                        _copied = skins.copy_missing_files(_imaginary_sel_category, _new_pack)
+                        _copied = skins.copy_missing_files(_eb_sel_category, _new_pack)
                     "Copied [_copied] files."
                 
                 "Cancel":
-                    jump imaginary_section_categories
+                    jump eb_section_categories
     
     # Save the selection
-    $ skins.set_selected_pack(_imaginary_sel_category, _new_pack)
+    $ skins.set_selected_pack(_eb_sel_category, _new_pack)
     
     # Restore original files if selecting default (for file-copy categories)
-    if not _new_pack and _imaginary_sel_category in ["eyes", "eyebrows", "mouth", "nose", "blush", "arms", "torso", "mug", "hotchoc_mug", "calendar", "promisering", "nou", "chess", "pong", "quetzal", "quetzal_mid", "roses"]:
+    if not _new_pack and _eb_sel_category in ["eyes", "eyebrows", "mouth", "nose", "blush", "arms", "torso", "mug", "hotchoc_mug", "calendar", "promisering", "nou", "chess", "pong", "quetzal", "quetzal_mid", "roses"]:
         python:
-            _restored = imaginary_restore_mas_defaults(_imaginary_sel_category)
+            _restored = eb_restore_mas_defaults(_eb_sel_category)
         if _restored:
             "Restored original files from backup."
         else:
@@ -288,15 +288,15 @@ label imaginary_skin_apply:
         "Later":
             pass
     
-    jump imaginary_section_categories
+    jump eb_section_categories
 
 
 # ==============================================================================
 # RESTART CONFIRMATION DIALOG
-# Used when applying skins via imaginary_apply_skins()
+# Used when applying skins via eb_apply_skins()
 # ==============================================================================
 
-label imaginary_restart_dialog:
+label eb_restart_dialog:
     show monika at t11
     m 1eua "Do you want to apply the skin changes?"
     m 1eub "I need to restart for the changes to take effect."
@@ -316,12 +316,12 @@ label imaginary_restart_dialog:
 # Shown when selected packs are missing files
 # ==============================================================================
 
-label imaginary_incomplete_packs_dialog:
+label eb_incomplete_packs_dialog:
     show monika at t11
     m 1ekc "Hmm, it looks like some packs are incomplete..."
     
     python:
-        incomplete_list = store._imaginary_incomplete_packs
+        incomplete_list = store._eb_incomplete_packs
         for cat, pack, count in incomplete_list:
             renpy.say(m, "The pack '[pack]' in '[cat]' is missing [count] files.")
     
@@ -331,7 +331,7 @@ label imaginary_incomplete_packs_dialog:
     menu:
         "Yes, complete the packs":
             python:
-                import store.imaginary_skins as skins
+                import store.eb_skins as skins
                 total_copied = 0
                 for cat, pack, count in incomplete_list:
                     copied = skins.copy_missing_files(cat, pack)
