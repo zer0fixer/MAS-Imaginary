@@ -1,5 +1,5 @@
 # ==============================================================================
-# IMAGINARY SUBMOD - Main Configuration
+# EMERALD BOX - Main Configuration
 # ==============================================================================
 # This file contains:
 #   - Submod registration
@@ -74,11 +74,11 @@ init -999:
     default persistent._eb_pong_pack = None
     
     # --- Particle Settings ---
-    default persistent._eb_particle_type = "dust"
+    default persistent._eb_particle_type = "hearts"
     default persistent._eb_particles_enabled = True
     default persistent._eb_particle_count = 15
     default persistent._eb_temp_disabled = False
-    default persistent._eb_particle_layer = "back"  # "back", "middle", "front"
+    default persistent._eb_particle_layer = "middle"  # "back", "middle", "front"
 
 # ==============================================================================
 # SETTINGS SCREEN

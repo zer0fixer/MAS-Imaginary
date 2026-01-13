@@ -1,5 +1,5 @@
 # ==============================================================================
-# IMAGINARY SUBMOD - Functions
+# EMERALD BOX - Functions
 # ==============================================================================
 # This file contains all Python functions for the submod, organized in sections:
 #   1. PARTICLE SYSTEM - Core particle creation, animation, and management

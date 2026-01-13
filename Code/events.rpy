@@ -1,5 +1,5 @@
 # ==============================================================================
-# IMAGINARY SUBMOD - Events & Labels
+# EMERALD BOX - Events & Labels
 # ==============================================================================
 # This file contains Ren'Py labels and events for the submod:
 #   - Pack selection topic (Misc menu)
