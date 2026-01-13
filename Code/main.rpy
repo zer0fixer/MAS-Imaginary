@@ -31,9 +31,9 @@ init -990 python:
 init -989 python:
     if store.mas_submod_utils.isSubmodInstalled("Submod Updater Plugin"):
         store.sup_utils.SubmodUpdater(
-            submod="Imaginary",
+            submod="Emerald Box",
             user_name="zer0fixer",
-            repository_name="MAS-Imaginary",
+            repository_name="MAS-EmeraldBox",
             redirected_files=(
                 "README.txt"
             )
