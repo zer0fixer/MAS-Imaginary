@@ -63,7 +63,7 @@ Add atmospheric particles to enhance the mood:
 ## 📦 Installation
 
 1. Download the latest release
-2. Extract the `Imaginary` folder
+2. Extract the `EmeraldBox` folder
 3. Copy it to: `DDLC/game/Submods/`
 
 **Full path after installation:**
@@ -71,7 +71,7 @@ Add atmospheric particles to enhance the mood:
 DDLC/
 └── game/
     └── Submods/
-        └── Imaginary/
+        └── EmeraldBox/
             ├── main.rpy
             ├── functions.rpy
             ├── events.rpy
