@@ -352,20 +352,7 @@ init -990 python in eb:
         "bubbles": "floating"  # Bubbles float around
     }
 
-# ==============================================================================
-# FACE PACK OVERRIDE
-# Applies custom face pack by overriding MAS sprite paths
-# ==============================================================================
-
-init 100 python in mas_sprites:
-    import store.eb_skins as skins
-    
-    _face_pack = store.persistent._eb_face_pack
-    if _face_pack:
-        _custom_face_path = skins.CUSTOM_PATH + "face/" + _face_pack + "/"
-        if renpy.loadable(_custom_face_path):
-            F_MAIN = _custom_face_path
-            F_T_MAIN = F_MAIN
+# Note: Face pack override removed - face parts are now copied directly to MAS folders
 
 # ==============================================================================
 # MAS HOOKS

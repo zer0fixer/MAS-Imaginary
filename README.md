@@ -30,9 +30,9 @@ Customize Monika's appearance and accessories with sprite packs:
   - Calendar
 
 - **Games**
-  - NOU cards
-  - Chess pieces
-  - Pong paddles
+  - NOU
+  - Chess
+  - Pong
 
 ### ✨ Ambient Particles
 Add atmospheric particles to enhance the mood:

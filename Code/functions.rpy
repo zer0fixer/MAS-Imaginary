@@ -796,7 +796,7 @@ init -990 python in eb_skins:
                 copied += 1
             except Exception as e:
                 store.mas_utils.mas_log.error(
-                    "Imaginary: Failed to copy {}: {}".format(f, e)
+                    "Emerald Box: Failed to copy {}: {}".format(f, e)
                 )
         
         return copied
@@ -1169,7 +1169,7 @@ init python:
         """Validate packs and request restart."""
         import store.eb_skins as skins
         
-        categories_to_check = ["face", "mug", "hotchoc_mug", "calendar"]
+        categories_to_check = ["eyes", "eyebrows", "mouth", "nose", "blush", "arms", "torso", "mug", "hotchoc_mug", "calendar", "promisering", "nou", "chess", "pong", "quetzal", "quetzal_mid", "roses"]
         incomplete_packs = []
         
         for cat in categories_to_check:
