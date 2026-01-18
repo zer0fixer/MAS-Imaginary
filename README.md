@@ -1,4 +1,6 @@
-# Emerald Box
+<p align="center">
+  <img src="https://github.com/zer0fixer/resource-repository/blob/main/Images/EmeraldBox.png">
+</p>
 
 Transform your Monika After Story experience with custom visual packs and ambient particles. Personalize every detail of Monika's appearance from her eyes and expressions to accessories and room elements while adding atmospheric effects like falling snow, sakura petals, and floating hearts.
 
@@ -97,7 +99,7 @@ DDLC/
 
 # 📖 Sprite Pack Structure Guide
 
-This guide helps sprite makers understand where to place their custom packs.
+This guide helps you understand where to place custom packs.
 
 ## 📁 Folder Structure
 
@@ -252,7 +254,7 @@ For example, if you want to create a custom NOU card design:
 - The submod applies your custom cards
 - SFX and other assets remain as MAS defaults
 
-## 💡 Tips for Sprite Makers
+## 💡 Tips for Pack Creators
 
 1. **Match the original resolution**
 2. **Keep transparency** where applicable
@@ -265,4 +267,4 @@ The submod automatically handles file naming differences between:
 - **MAS 0.12.16+** (new folder structure)
 - **MAS 0.12.15 and below** (old prefix naming)
 
-Sprite makers only need to provide the new format - the submod converts automatically.
+Pack creators only need to provide the new format - the submod converts automatically.
