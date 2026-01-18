@@ -245,24 +245,7 @@ label eb_skin_apply:
         "No changes made."
         jump eb_skin_select
     
-    # Check if pack has all required files
-    if _new_pack:
-        python:
-            _missing = skins.get_missing_files(_eb_sel_category, _new_pack)
-            _missing_count = len(_missing)
-        
-        if _missing_count > 0:
-            "This pack is incomplete. Missing [_missing_count] files."
-            menu:
-                "Complete it with default files":
-                    python:
-                        _copied = skins.copy_missing_files(_eb_sel_category, _new_pack)
-                    "Copied [_copied] files."
-                
-                "Cancel":
-                    jump eb_section_categories
-    
-    # Save the selection
+    # Save the selection (pack will only apply its included files)
     $ skins.set_selected_pack(_eb_sel_category, _new_pack)
     
     # Restore original files if selecting default (for file-copy categories)
@@ -311,44 +294,5 @@ label eb_restart_dialog:
             return
 
 
-# ==============================================================================
-# INCOMPLETE PACKS DIALOG
-# Shown when selected packs are missing files
-# ==============================================================================
 
-label eb_incomplete_packs_dialog:
-    show monika at t11
-    m 1ekc "Hmm, it looks like some packs are incomplete..."
-    
-    python:
-        incomplete_list = store._eb_incomplete_packs
-        for cat, pack, count in incomplete_list:
-            renpy.say(m, "The pack '[pack]' in '[cat]' is missing [count] files.")
-    
-    m 1eua "Do you want me to complete the missing files using the defaults?"
-    m 3eub "That way the pack will work correctly."
-    
-    menu:
-        "Yes, complete the packs":
-            python:
-                import store.eb_skins as skins
-                total_copied = 0
-                for cat, pack, count in incomplete_list:
-                    copied = skins.copy_missing_files(cat, pack)
-                    total_copied += copied
-            
-            m 1hua "Done! Copied [total_copied] files."
-            m 1eub "Now I need to restart to apply the changes."
-            
-            menu:
-                "Restart now":
-                    m 1hua "See you in a moment~!"
-                    return "quit"
-                
-                "I'll do it later":
-                    m 1eka "Okay, restart when you're ready."
-                    return
-        
-        "No, cancel":
-            m 1eka "Understood. The incomplete packs won't work until they have all the files."
-            return
+# Note: Incomplete packs dialog removed - packs now only apply their included files

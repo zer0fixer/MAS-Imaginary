@@ -1164,23 +1164,4 @@ init python:
         new_pack = packs[prev_idx] if prev_idx > 0 else None
         skins.set_selected_pack(category, new_pack)
     
-    
-    def eb_apply_skins():
-        """Validate packs and request restart."""
-        import store.eb_skins as skins
-        
-        categories_to_check = ["eyes", "eyebrows", "mouth", "nose", "blush", "arms", "torso", "mug", "hotchoc_mug", "calendar", "promisering", "nou", "chess", "pong", "quetzal", "quetzal_mid", "roses"]
-        incomplete_packs = []
-        
-        for cat in categories_to_check:
-            pack = skins.get_selected_pack(cat)
-            if pack:
-                missing = skins.get_missing_files(cat, pack)
-                if missing:
-                    incomplete_packs.append((cat, pack, len(missing)))
-        
-        if incomplete_packs:
-            store._eb_incomplete_packs = incomplete_packs
-            renpy.call_in_new_context("eb_incomplete_packs_dialog")
-        else:
-            renpy.call_in_new_context("eb_restart_dialog")
+    # Note: eb_apply_skins removed - packs now only apply their included files

@@ -241,17 +241,16 @@ Use the **NEW format** (MAS 0.12.16+):
 - **Do NOT use** the old `acs-[name]-` prefix
 - The submod automatically converts for older MAS versions
 
-
-## ✅ Incomplete Packs - Don't Worry!
+## ✅ Partial Packs - No Problem!
 
 > 💡 **You don't need to include ALL files!**
 > 
-> If your pack is missing some files, the submod will **automatically offer to complete it** with the default MAS files. This means you can create a pack with only the files you want to modify!
+> The submod only applies the files included in your pack. MAS will use its original files for anything not included. This means you can create a pack with only the files you want to modify!
 
-For example, if you only want to change the promise ring appearance but not all poses:
-- Just include the files you modified
-- The submod will detect missing files
-- It will offer to fill them with MAS defaults automatically
+For example, if you want to create a custom NOU card design:
+- Include only the card images in `cards/`
+- The submod applies your custom cards
+- SFX and other assets remain as MAS defaults
 
 ## 💡 Tips for Sprite Makers
 
