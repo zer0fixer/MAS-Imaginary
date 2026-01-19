@@ -924,6 +924,32 @@ init 100 python:
             except Exception:
                 pass  # Backup exists or permission issue
         
+        # For OLD FORMAT (MAS < 0.12.16): backup acs-xxx-*.png files from /a/ folder
+        if needs_old_format and category in OLD_FORMAT_CATEGORIES:
+            old_acs_name = OLD_FORMAT_CATEGORIES[category]
+            old_a_path = skins.get_full_path("mod_assets/monika/a/")
+            old_backup_path = skins.get_full_path(skins.CUSTOM_PATH + "_backup_mas/old_acs/")
+            
+            # Create old format backup if not exists
+            if not os.path.exists(old_backup_path):
+                try:
+                    os.makedirs(old_backup_path)
+                except:
+                    pass
+            
+            # Backup matching acs-xxx-*.png files
+            acs_prefix = "acs-{}-".format(old_acs_name)
+            if os.path.exists(old_a_path):
+                for f in os.listdir(old_a_path):
+                    if f.startswith(acs_prefix) and f.endswith(".png"):
+                        src = os.path.join(old_a_path, f)
+                        dst = os.path.join(old_backup_path, f)
+                        if os.path.isfile(src) and not os.path.exists(dst):
+                            try:
+                                shutil.copy2(src, dst)
+                            except:
+                                pass
+        
         # For old format, files go directly to /a/ not in subfolders
         if needs_old_format and category in OLD_FORMAT_CATEGORIES:
             old_acs_name = OLD_FORMAT_CATEGORIES[category]
@@ -1041,26 +1067,55 @@ init 100 python:
         backup_path = skins.get_full_path(skins.CUSTOM_PATH + "_backup_mas/" + backup_key + "/")
         prefixes = skins.get_file_prefixes(cat_info)
         
-        if not os.path.exists(backup_path):
-            return False
+        restored = False
         
-        # Copy backup back to MAS location (only files matching prefixes if specified)
-        for root, dirs, files in os.walk(backup_path):
-            for f in files:
-                # Skip files that don't match the prefixes (if specified)
-                if prefixes and not skins.matches_prefix(f, prefixes):
-                    continue
+        # Restore from new format backup
+        if os.path.exists(backup_path):
+            # Copy backup back to MAS location (only files matching prefixes if specified)
+            for root, dirs, files in os.walk(backup_path):
+                for f in files:
+                    # Skip files that don't match the prefixes (if specified)
+                    if prefixes and not skins.matches_prefix(f, prefixes):
+                        continue
+                        
+                    src = os.path.join(root, f)
+                    rel_path = os.path.relpath(src, backup_path)
+                    dst = os.path.join(mas_path, rel_path)
                     
-                src = os.path.join(root, f)
-                rel_path = os.path.relpath(src, backup_path)
-                dst = os.path.join(mas_path, rel_path)
-                
-                try:
-                    shutil.copy2(src, dst)
-                except:
-                    pass
+                    try:
+                        shutil.copy2(src, dst)
+                        restored = True
+                    except:
+                        pass
         
-        return True
+        # Also restore from OLD FORMAT backup if applicable
+        OLD_FORMAT_CATEGORIES = {
+            "mug": "mug",
+            "hotchoc_mug": "hotchoc_mug",
+            "promisering": "promisering",
+            "quetzal": "quetzalplushie",
+            "quetzal_mid": "quetzalplushie_mid",
+            "roses": "roses"
+        }
+        
+        if category in OLD_FORMAT_CATEGORIES:
+            old_acs_name = OLD_FORMAT_CATEGORIES[category]
+            old_backup_path = skins.get_full_path(skins.CUSTOM_PATH + "_backup_mas/old_acs/")
+            old_a_path = skins.get_full_path("mod_assets/monika/a/")
+            
+            if os.path.exists(old_backup_path):
+                acs_prefix = "acs-{}-".format(old_acs_name)
+                for f in os.listdir(old_backup_path):
+                    if f.startswith(acs_prefix) and f.endswith(".png"):
+                        src = os.path.join(old_backup_path, f)
+                        dst = os.path.join(old_a_path, f)
+                        try:
+                            shutil.copy2(src, dst)
+                            restored = True
+                        except:
+                            pass
+        
+        return restored
     
     # Apply packs on startup
     eb_apply_file_packs()

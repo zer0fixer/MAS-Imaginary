@@ -156,9 +156,11 @@ label eb_restore_all:
                 ]
                 
                 for _cat in _categories:
-                    if eb_restore_mas_defaults(_cat):
-                        _restored_count += 1
-                    skins.set_selected_pack(_cat, None)
+                    # Only restore categories that have a custom pack active
+                    if skins.get_selected_pack(_cat):
+                        if eb_restore_mas_defaults(_cat):
+                            _restored_count += 1
+                        skins.set_selected_pack(_cat, None)
             
             "Restored [_restored_count] categories to defaults."
             "Restart required to apply changes."
@@ -279,20 +281,18 @@ label eb_skin_apply:
 # Used when applying skins via eb_apply_skins()
 # ==============================================================================
 
-label eb_restart_dialog:
-    show monika at t11
-    m 1eua "Do you want to apply the skin changes?"
-    m 1eub "I need to restart for the changes to take effect."
+# label eb_restart_dialog:
+#     show monika at t11
+#     m 1eua "Do you want to apply the skin changes?"
+#     m 1eub "I need to restart for the changes to take effect."
     
-    menu:
-        "Yes, restart now":
-            m 1hua "Alright! See you in a moment~"
-            return "quit"
+#     menu:
+#         "Yes, restart now":
+#             m 1hua "Alright! See you in a moment~"
+#             return "quit"
         
-        "No, I'll do it later":
-            m 1eka "Okay, just remember that you need to restart to see the changes."
-            return
-
-
+#         "No, I'll do it later":
+#             m 1eka "Okay, just remember that you need to restart to see the changes."
+#             return
 
 # Note: Incomplete packs dialog removed - packs now only apply their included files

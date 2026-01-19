@@ -20,7 +20,7 @@ init -990 python:
         author="ZeroFixer",
         name="Emerald Box",
         description="Customize Monika's appearance with visual packs (eyes, mouth, nose, arms, torso, accessories, games) and ambient particles (snow, sakura, leaves, and more).",
-        version="1.0.0",
+        version="1.0.1",
         settings_pane="eb_settings_pane"
     )
 
